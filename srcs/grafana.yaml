@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  annotations:
+    metallb.universe.tf/allow-shared-ip: shared
+spec:
+  selector:
+    app: grafana
+  type: LoadBalancer
+  ports:
+  - port: 3000
+    targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: oel-ahma/grafana
+        imagePullPolicy: Never
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          exec:
+            command:
+            - /bin/ash
+            - /livenessprobe.sh
+        ports:
+          - containerPort: 3000
+        volumeMounts:
+          - name: grafana-persistent-storage
+            mountPath: /grafana-7.4.5/data
+      volumes:
+        - name: grafana-persistent-storage
+          persistentVolumeClaim:
+            claimName: grafana-pv-claim

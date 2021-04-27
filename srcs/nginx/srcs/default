@@ -1,0 +1,26 @@
+server {
+	listen 80;
+	listen [::]:80;
+	server_name localhost;
+	return 301 https://$host$request_uri;
+}
+
+server {
+
+	listen 443 ssl ;
+	listen [::]:443 ssl ;
+	server_name localhost;
+
+	ssl_certificate /etc/ssl/localhost.pem;
+	ssl_certificate_key /etc/ssl/localhost.key;
+	root /landing/;
+
+	location /wordpress {
+		return 307 https://$host:5050;
+	}
+
+	location /phpmyadmin/ {
+		include			proxy_params;
+		proxy_pass		https://phpmyadmin:5000/phpmyadmin/;
+	}
+}

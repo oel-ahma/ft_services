@@ -1,0 +1,32 @@
+FROM oel-ahma/alpine_base
+
+ENV SERVICE_NAME nginx
+ENV SSH_USER oel-ahma
+ENV SSH_PASSWORD oel-ahma
+
+RUN apk add nginx
+
+RUN openssl req -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out /etc/ssl/localhost.pem -keyout /etc/ssl/localhost.key -subj "/C=FR/ST=Paris/L=Paris/O=Nginx K8s FT/OU=oel-ahma/CN=localhost"
+
+COPY srcs/init.sh .
+RUN chmod +x init.sh
+
+RUN openrc
+RUN touch /run/openrc/softlevel
+
+COPY srcs/proxy_params /etc/nginx/proxy_params
+COPY srcs/default /etc/nginx/conf.d/default.conf
+
+RUN apk add openssh
+RUN ssh-keygen -A
+
+COPY srcs/landing /landing
+
+COPY srcs/livenessprobe.sh .
+RUN chmod +x livenessprobe.sh
+
+RUN sed  -i 's/SERVICE_NAME/'$SERVICE_NAME'/g' /etc/telegraf/telegraf.conf
+
+EXPOSE 80 443
+
+CMD ./init.sh

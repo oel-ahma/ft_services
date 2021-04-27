@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3306
+      targetPort: 3306
+      protocol: TCP
+      name: mysql
+  selector:
+    app: mysql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: oel-ahma/mysql
+        imagePullPolicy: Never
+        livenessProbe:
+          periodSeconds: 3
+          initialDelaySeconds: 10
+          exec:
+            command:
+            - /bin/ash
+            - /livenessprobe.sh
+        env:
+          - name: WP_DB_NAME
+            valueFrom:
+              secretKeyRef:
+                name: mysqlsecret
+                key: WP_DB_NAME
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysqlsecret
+                key: MYSQL_ROOT_PASSWORD
+          - name: ADMIN_WP_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysqlsecret
+                key: ADMIN_WP_USER
+          - name: ADMIN_WP_PASS
+            valueFrom:
+              secretKeyRef:
+                name: mysqlsecret
+                key: ADMIN_WP_PASS
+          - name: USER1_WP_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysqlsecret
+                key: USER1_WP_USER
+          - name: USER1_WP_PASS
+            valueFrom:
+              secretKeyRef:
+                name: mysqlsecret
+                key: USER1_WP_PASS
+          - name: USER2_WP_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysqlsecret
+                key: USER2_WP_USER
+          - name: USER2_WP_PASS
+            valueFrom:
+              secretKeyRef:
+                name: mysqlsecret
+                key: USER2_WP_PASS
+        ports:
+          - containerPort: 3306
+            name: mysql
+        volumeMounts:
+          - name: mysql-persistent-storage
+            mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
